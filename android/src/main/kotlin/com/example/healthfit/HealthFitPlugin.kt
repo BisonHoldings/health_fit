@@ -65,6 +65,16 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
                 })
     }
 
+    // TODO make this FitnessOptions to android platform domain object
+    private fun requestPermission(result: Result, fitnessOptions: FitnessOptions) {
+        deferredResult = result
+        GoogleSignIn.requestPermissions(
+                activity,
+                GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                GoogleSignIn.getLastSignedInAccount(activity),
+                fitnessOptions)
+    }
+
     private fun getData(result: Result, dataType: DataType, startAt: Long, endAt: Long, bucket: TimeUnit) {
         val dataRequest = createReadRequest(dataType, startAt, endAt, bucket)
         Fitness.getHistoryClient(activity,
@@ -85,7 +95,26 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             .setTimeRange(startAt, endAt, bucket)
             .build()
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
-        return true
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean = when (resultCode) {
+        // TODO: put the concrete messages because requests and results have multiple status.
+        Activity.RESULT_OK -> {
+            when (requestCode) {
+                GOOGLE_FIT_PERMISSIONS_REQUEST_CODE -> {
+                    deferredResult.success(true)
+                    deferredResult = null
+                    true
+                }
+                else -> {
+                    deferredResult.success(false)
+                    deferredResult = null
+                    false
+                }
+            }
+        }
+        else -> {
+            deferredResult.success(false)
+            deferredResult = null
+            false
+        }
     }
 }
