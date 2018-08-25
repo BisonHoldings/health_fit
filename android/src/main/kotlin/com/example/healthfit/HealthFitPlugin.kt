@@ -1,28 +1,14 @@
 package com.example.healthfit
 
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodCall
+
+import android.app.Activity
+import android.content.Intent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
-import io.flutter.plugin.common.PluginRegistry.Registrar
-import io.flutter.plugin.common.PluginRegistry.ActivityResultListener
-import android.app.Activity
-import java.text.DateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
-import android.content.Intent
-import android.support.v4.content.PermissionChecker
-import io.flutter.plugin.common.MethodChannel.Result
-
-
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.request.DataReadRequest
-import com.google.android.gms.fitness.result.DataReadResponse
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.Tasks
-import io.flutter.plugin.common.PluginRegistry
+import java.util.concurrent.TimeUnit
 
 
 class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, ActivityResultListener {
@@ -37,12 +23,9 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             val channel = MethodChannel(registrar.messenger(), "health_fit")
             channel.setMethodCallHandler(plugin);
         }
-
-        val dataType: DataType = DataType.TYPE_STEP_COUNT_DELTA
-        val aggregatedDataType: DataType = DataType.AGGREGATE_STEP_COUNT_DELTA
-
-        val TAG = HealthFitPlugin::class.java.simpleName
     }
+
+    private var deferredResult: Result? = null
 
     override fun onMethodCall(call: MethodCall, result: Result): Unit {
         when (call.method) {
@@ -50,6 +33,9 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             }
             "hasPermission" -> hasPermission(call, result)
             "disable" -> disable(result)
+            "getData" -> {
+                getData(result)
+            }
             else -> result.notImplemented()
         }
     }
@@ -79,6 +65,26 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
                     result.success(it.isSuccessful)
                 })
     }
+
+    private fun getData(result: Result, dataType: DataType, startAt: Long, endAt: Long, bucket: TimeUnit) {
+        val dataRequest = createReadRequest(dataType, startAt, endAt, bucket)
+        Fitness.getHistoryClient(activity,
+                GoogleSignIn.getLastSignedInAccount(activity))
+                .readData(dataRequest)
+                .addOnCompleteListener {
+                    // TODO add serializer for sending it to dart interface.
+                }
+    }
+
+    private fun createReadRequest(dataType: DataType,
+                                  startAt: Long,
+                                  endAt: Long,
+                                  bucket: TimeUnit) = DataReadRequest.Builder()
+            .read(dataType)
+            // TODO making bucket time more flexible
+            .bucketByTime(1, bucket)
+            .setTimeRange(startAt, endAt, bucket)
+            .build()
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
         return true
