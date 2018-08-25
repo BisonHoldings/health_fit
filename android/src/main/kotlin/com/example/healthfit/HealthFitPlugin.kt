@@ -43,7 +43,6 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
     private fun hasPermission(call: MethodCall, result: Result) {
         val rawDataType = call.argument("dataType")
         val rawPermission = call.argument("permission")
-        val healthFitOptions = mutableSetOf<String>()
         val dataType: DataType = when (rawDataType) {
             "com.google.step_count.delta" -> DataType.TYPE_STEP_COUNT_DELTA
             else -> throw IllegalArgumentException("$rawDataType is not allowed here.")
