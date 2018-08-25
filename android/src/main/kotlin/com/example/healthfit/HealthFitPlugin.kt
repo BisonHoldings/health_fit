@@ -20,6 +20,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.request.DataReadRequest
 import com.google.android.gms.fitness.result.DataReadResponse
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Tasks
 import io.flutter.plugin.common.PluginRegistry
 
@@ -48,6 +49,7 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             "getPlatformVersion" -> {
             }
             "hasPermission" -> hasPermission(call, result)
+            "disable" -> disable(result)
             else -> result.notImplemented()
         }
     }
@@ -68,6 +70,14 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
         val optionsBuilder = FitnessOptions.builder()
         optionsBuilder.addDataType(dataType, permission)
         result.success(GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), optionsBuilder.build()))
+    }
+
+    private fun disable(result: Result) {
+        Fitness.getConfigClient(activity,
+                GoogleSignIn.getLastSignedInAccount(activity))
+                .disableFit().addOnCompleteListener({
+                    result.success(it.isSuccessful)
+                })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
