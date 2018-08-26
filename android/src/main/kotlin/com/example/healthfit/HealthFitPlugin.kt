@@ -15,12 +15,21 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener
+import android.util.Log
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.Scopes
+import com.google.android.gms.common.api.Scope
+import com.google.android.gms.fitness.HistoryApi
+import java.util.*
 
 
 class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, ActivityResultListener {
 
     companion object {
         const val GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 1
+        const val GOOGLE_SIGN_IN_REQUEST_CODE = 2
         @JvmStatic
         fun registerWith(registrar: Registrar): Unit {
             val plugin = HealthFitPlugin(registrar.activity())
@@ -34,6 +43,7 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
     private var deferredResult: Result? = null
 
     override fun onMethodCall(call: MethodCall, result: Result): Unit {
+        Log.e("HFP: onMethodCall", "${call.method}")
         when (call.method) {
             "getPlatformVersion" -> {
             }
@@ -41,6 +51,13 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             "requestPermission" -> requestPermission(call, result)
             "disable" -> disable(result)
             "getData" -> {
+                val cal = Calendar.getInstance()
+                val now = Date()
+                cal.setTime(now)
+                val endTime = cal.getTimeInMillis()
+                cal.add(Calendar.MONTH, -1)
+                val startTime = cal.getTimeInMillis()
+                getData(result, DataType.TYPE_STEP_COUNT_DELTA, startTime, endTime, TimeUnit.DAYS)
                 // TODO add getData method with correct arguments
             }
             else -> result.notImplemented()
@@ -51,6 +68,9 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
         val healthFitOption = getHealthFitOptions(call)
         val optionsBuilder = FitnessOptions.builder()
         optionsBuilder.addDataType(healthFitOption.dataType, healthFitOption.permission)
+        Log.e("HFP: hasPermission option", "${healthFitOption.dataType}:${healthFitOption.permission}")
+        Log.e("HFP: hasPermission Account", "${GoogleSignIn.getLastSignedInAccount(activity)}")
+        Log.e("HFP: hasPermission", "${GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), optionsBuilder.build())}")
         result.success(GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), optionsBuilder.build()))
     }
 
@@ -70,33 +90,84 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
     }
 
     private fun disable(result: Result) {
-        Fitness.getConfigClient(activity,
-                GoogleSignIn.getLastSignedInAccount(activity))
-                .disableFit().addOnCompleteListener({
-                    result.success(it.isSuccessful)
-                })
+        GoogleSignIn.getLastSignedInAccount(activity)?.let {
+            Fitness.getConfigClient(activity, it)
+                    .disableFit().addOnCompleteListener({
+                        result.success(it.isSuccessful)
+                    })
+        }
+
+        if (GoogleSignIn.getLastSignedInAccount(activity) == null) {
+            attemptSignIn {
+                if (it) {
+                    disable(result)
+                } else {
+                    Log.e("HFP: disable", "failed to disable")
+                }
+            }
+        }
+
+    }
+
+    private fun attemptSignIn(callback: (Boolean) -> Unit) {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build()
+        activity.startActivityForResult(GoogleSignIn.getClient(activity, gso).signInIntent, GOOGLE_SIGN_IN_REQUEST_CODE)
+//                .addOnSuccessListener {
+//                    Log.e("HFP: attemptSignIn", "success")
+//                    callback(true)
+//                }
+//                .addOnFailureListener {
+//                    Log.e("HFP: attemptSignIn", "failure")
+//                    callback(false)
+//                }
     }
 
     private fun requestPermission(call: MethodCall, result: Result) {
+        Log.e("HFP: requestPermission", "result")
         deferredResult = result
         val healthFitOption = getHealthFitOptions(call)
         val optionsBuilder = FitnessOptions.builder()
         optionsBuilder.addDataType(healthFitOption.dataType, healthFitOption.permission)
-        GoogleSignIn.requestPermissions(
-                activity,
-                GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                GoogleSignIn.getLastSignedInAccount(activity),
-                optionsBuilder.build())
+        GoogleSignIn.getLastSignedInAccount(activity)?.let {
+            GoogleSignIn.requestPermissions(
+                    activity,
+                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                    it,
+                    optionsBuilder.build())
+        }
+
+        if (GoogleSignIn.getLastSignedInAccount(activity) == null) {
+            attemptSignIn {
+                if (it) {
+                    requestPermission(call, result)
+                } else {
+                    Log.e("HFP: requestPermission", "failed to request permission")
+                }
+            }
+        }
     }
 
     private fun getData(result: Result, dataType: DataType, startAt: Long, endAt: Long, bucket: TimeUnit) {
         val dataRequest = createReadRequest(dataType, startAt, endAt, bucket)
-        Fitness.getHistoryClient(activity,
-                GoogleSignIn.getLastSignedInAccount(activity))
-                .readData(dataRequest)
-                .addOnCompleteListener {
-                    // TODO add serializer for sending it to dart interface.
+        GoogleSignIn.getLastSignedInAccount(activity)?.let {
+            Fitness.getHistoryClient(activity, it)
+                    .readData(dataRequest)
+                    .addOnCompleteListener {
+                        result.success("100")
+                        // TODO add serializer for sending it to dart interface.
+                    }
+        }
+        if (GoogleSignIn.getLastSignedInAccount(activity) == null) {
+            attemptSignIn {
+                if (it) {
+                    getData(result, dataType, startAt, endAt, bucket)
+                } else {
+                    Log.e("HFP: getData", "failed to sign in")
                 }
+            }
+        }
     }
 
     private fun createReadRequest(dataType: DataType,
@@ -112,8 +183,14 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean = when (resultCode) {
     // TODO: put the concrete messages because requests and results have multiple status.
         Activity.RESULT_OK -> {
+            Log.e("HFP: onActivityResult", "requestCode:${requestCode} resultCode: ${resultCode}")
             when (requestCode) {
                 GOOGLE_FIT_PERMISSIONS_REQUEST_CODE -> {
+                    deferredResult?.success(true)
+                    deferredResult = null
+                    true
+                }
+                GOOGLE_SIGN_IN_REQUEST_CODE -> {
                     deferredResult?.success(true)
                     deferredResult = null
                     true
@@ -126,6 +203,7 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
             }
         }
         else -> {
+            Log.e("HFP: onActivityResult", "requestCode:${requestCode} resultCode: ${resultCode}")
             deferredResult?.success(false)
             deferredResult = null
             false
