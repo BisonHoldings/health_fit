@@ -32,7 +32,8 @@ class _MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<_MyHomePage> {
   String _platformVersion = 'Unknown';
-  int _stepCount = 0;
+  bool _hasPermission = false;
+  String _stepCount = 0.toString();
   double _weight = 0.0;
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -55,27 +56,41 @@ class _MyHomePageState extends State<_MyHomePage> {
     });
   }
 
+  Future<void> initPermissionState() async {
+    bool hasPermission;
+    hasPermission = await HealthFit.hasPermission(DataType.STEP);
+
+    if (!hasPermission) {
+      bool requestPermission = await HealthFit.requestPermission(DataType.STEP);
+      hasPermission = requestPermission;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _hasPermission = hasPermission;
+    });
+  }
+
+  Future<void> updateStepCounts() async {
+    String stepCounts = await HealthFit.getData(
+        DataType.STEP,
+        DateTime.now().add(new Duration(days: -30)),
+        DateTime.now(),
+        TimeUnit.MILLISECONDS);
+
+    if (!mounted) return;
+
+    setState(() {
+      _stepCount = stepCounts;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     initPlatformState();
-  }
-
-  void _updateStepCountState() {
-    // FIXME: replace with plugin methods
-    setState((){
-      if (_stepCount == 0) {
-        _stepCount = 10000;
-      } else {
-        _stepCount = 0;
-      }
-
-      if (_weight == 0.0) {
-        _weight = 65.7;
-      } else {
-        _weight = 0.0;
-      }
-    });
+    initPermissionState();
   }
 
   @override
@@ -88,11 +103,15 @@ class _MyHomePageState extends State<_MyHomePage> {
         children: <Widget>[
           Container(
             padding: const EdgeInsets.all(16.0),
+            child: Center(child: Text('has permission: $_hasPermission')),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16.0),
             child: Center(child: Text('Platform version: $_platformVersion')),
           ),
           Container(
             padding: const EdgeInsets.all(16.0),
-            child: Center(child: Text('StepCount: $_stepCount')),
+            child: Center(child: Text('StepCount:\n $_stepCount')),
           ),
           Container(
             padding: const EdgeInsets.all(16.0),
@@ -100,12 +119,12 @@ class _MyHomePageState extends State<_MyHomePage> {
           ),
         ],
         mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize:  MainAxisSize.max,
+        mainAxisSize: MainAxisSize.max,
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.refresh),
         onPressed: () async {
-          _updateStepCountState();
+          updateStepCounts();
         },
       ),
     );
