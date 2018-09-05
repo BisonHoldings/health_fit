@@ -7,27 +7,27 @@
 
 import HealthKit
 
-enum DataType {
-    case step
-    case weight
+enum DataType: String {
+    case step = "DataType.STEP"
+    case weight = "DataType.WEIGHT"
 
-    init?(type: String) {
-        switch type {
-        case "DataType.STEP":
-            self = .step
-        case "DataType.WEIGHT":
-            self = .weight
-        default:
-            return nil
-        }
-    }
-
-    fileprivate var hkType: HKObjectType {
+    fileprivate var hkType: HKQuantityType {
         switch self {
         case .step: return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!
         case .weight: return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!
         }
     }
+}
+
+enum Permission: Int {
+    case read
+    case write
+    case readAndWrite
+}
+
+enum TimeUnit: String {
+    case milliseconds = "TimeUnit.MILLISECONDS"
+    case hours = "TimeUnit.HOURS"
 }
 
 private extension HKAuthorizationStatus {
@@ -39,11 +39,28 @@ private extension HKAuthorizationStatus {
     }
 }
 
-final public class HealthFit {
+final class HealthFit {
 
-    let health = HKHealthStore()
+    private let health = HKHealthStore()
 
     func hasPermission(type: DataType) -> Bool {
         return health.authorizationStatus(for: type.hkType).hasPhasPermission
+    }
+
+    func requestPermission(type: DataType, permission: Permission, completion: @escaping (Bool, Error?) -> Void) {
+        let shareType: Set<HKSampleType>?
+        let readType: Set<HKObjectType>?
+        switch permission {
+        case .read:
+            shareType = nil
+            readType = [type.hkType]
+        case .write:
+            shareType = [type.hkType]
+            readType = nil
+        case .readAndWrite:
+            shareType = [type.hkType]
+            readType = [type.hkType]
+        }
+        health.requestAuthorization(toShare: shareType, read: readType, completion: completion)
     }
 }

@@ -27,7 +27,7 @@ public class SwiftHealthFitPlugin: NSObject, FlutterPlugin {
         guard
             let args = call.arguments as? [String: Any],
             let dataTypeString = args["dataType"] as? String,
-            let dataType = DataType(type: dataTypeString)
+            let dataType = DataType(rawValue: dataTypeString)
         else {
             result(FlutterError())
             return
@@ -37,7 +37,30 @@ public class SwiftHealthFitPlugin: NSObject, FlutterPlugin {
     }
 
     private func requestPermission(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        result(true)
+        guard
+            let args = call.arguments as? [String: Any],
+            let dataTypeString = args["dataType"] as? String,
+            let argsPermission = args["permission"] as? Int,
+            let dataType = DataType(rawValue: dataTypeString),
+            let permission = Permission(rawValue: argsPermission)
+            else {
+                result(FlutterError())
+                return
+        }
+
+        HealthFit().requestPermission(
+            type: dataType,
+            permission: permission,
+            completion: { (isSuccess, error) in
+                switch (isSuccess, error) {
+                case (true, _):
+                    result(true)
+                case (false, let error?):
+                    result(FlutterError(code: "", message: error.localizedDescription, details: nil))
+                case (false, nil):
+                    result(FlutterError())
+                }
+        })
     }
 
     private func disable(_ result: @escaping FlutterResult) {
