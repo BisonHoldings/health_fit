@@ -68,6 +68,28 @@ public class SwiftHealthFitPlugin: NSObject, FlutterPlugin {
     }
 
     private func getData(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        result(nil)
+        guard
+            let args = call.arguments as? [String: Any],
+            let dataTypeString = args["dataType"] as? String,
+            let dataType = DataType(rawValue: dataTypeString),
+            let startAt = args["startAt"] as? Double,
+            let endAt = args["endAt"] as? Double,
+            let timeUnitString = args["timeUnit"] as? String,
+            let timeUnit = TimeUnit(rawValue: timeUnitString)
+            else {
+                result(FlutterError())
+                return
+        }
+
+        let startDate = Date(timeIntervalSince1970: startAt/1000)
+        let endDate = Date(timeIntervalSince1970: endAt/1000)
+
+        HealthFit().getData(
+            startDate: startDate,
+            endDate: endDate,
+            dataType: dataType,
+            timeUnite: timeUnit,
+            completion: { result($0)}
+        )
     }
 }

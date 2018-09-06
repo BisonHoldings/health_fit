@@ -17,6 +17,13 @@ enum DataType: String {
         case .weight: return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!
         }
     }
+
+    fileprivate var unit: HKUnit {
+        switch self {
+        case .step: return HKUnit.count()
+        case .weight: return HKUnit.gram()
+        }
+    }
 }
 
 enum Permission: Int {
@@ -28,10 +35,19 @@ enum Permission: Int {
 enum TimeUnit: String {
     case milliseconds = "TimeUnit.MILLISECONDS"
     case hours = "TimeUnit.HOURS"
+
+    var dateComponent: DateComponents {
+        switch self {
+        case .hours:
+            return DateComponents(hour: 1)
+        case .milliseconds:
+            return DateComponents(nanosecond: 1_000_000)
+        }
+    }
 }
 
 private extension HKAuthorizationStatus {
-    var hasPhasPermission: Bool {
+    var hasPermission: Bool {
         switch self {
         case .notDetermined, .sharingDenied: return false
         case .sharingAuthorized: return true
@@ -44,7 +60,7 @@ final class HealthFit {
     private let health = HKHealthStore()
 
     func hasPermission(type: DataType) -> Bool {
-        return health.authorizationStatus(for: type.hkType).hasPhasPermission
+        return health.authorizationStatus(for: type.hkType).hasPermission
     }
 
     func requestPermission(type: DataType, permission: Permission, completion: @escaping (Bool, Error?) -> Void) {
@@ -62,5 +78,29 @@ final class HealthFit {
             readType = [type.hkType]
         }
         health.requestAuthorization(toShare: shareType, read: readType, completion: completion)
+    }
+
+    func getData(startDate: Date, endDate: Date, dataType: DataType, timeUnite: TimeUnit, completion: @escaping ((String) -> Void)) {
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictEndDate)
+        let anchorDate = Calendar(identifier: Calendar.Identifier.gregorian).startOfDay(for: Date())
+        
+        let query = HKStatisticsCollectionQuery(
+            quantityType: dataType.hkType,
+            quantitySamplePredicate: predicate,
+            options: .cumulativeSum,
+            anchorDate: anchorDate,
+            intervalComponents: timeUnite.dateComponent
+        )
+        let handler: ((HKStatisticsCollectionQuery, HKStatisticsCollection?, Error?) -> Void)? = { query, collection, error in
+            debugPrint(query, collection, error)
+            let quantities = collection?.statistics().compactMap { $0.sumQuantity() } ?? []
+            let values = quantities.map { $0.doubleValue(for: dataType.unit)}
+
+            completion(values.description)
+        }
+        query.initialResultsHandler = handler
+
+        health.execute(query)
     }
 }
