@@ -80,6 +80,10 @@ final class HealthFit {
         health.requestAuthorization(toShare: shareType, read: readType, completion: completion)
     }
 
+    func disable() -> Bool {
+        return !HKHealthStore.isHealthDataAvailable()
+    }
+
     func getData(startDate: Date, endDate: Date, dataType: DataType, timeUnite: TimeUnit, completion: @escaping ((String) -> Void)) {
 
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictEndDate)

@@ -64,7 +64,7 @@ public class SwiftHealthFitPlugin: NSObject, FlutterPlugin {
     }
 
     private func disable(_ result: @escaping FlutterResult) {
-        result(nil)
+        result(HealthFit().disable())
     }
 
     private func getData(call: FlutterMethodCall, result: @escaping FlutterResult) {

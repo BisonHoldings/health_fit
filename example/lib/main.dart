@@ -77,7 +77,7 @@ class _MyHomePageState extends State<_MyHomePage> {
         DataType.STEP,
         DateTime.now().add(new Duration(days: -30)),
         DateTime.now(),
-        TimeUnit.MILLISECONDS);
+        TimeUnit.HOURS);
 
     if (!mounted) return;
 
