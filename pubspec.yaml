@@ -1,8 +1,11 @@
 name: health_fit
-description: A new flutter plugin project.
+description: Health Fit is a plugin supporting the GoogleFit and HealthKit.
 version: 0.0.1
-author:
-homepage:
+author: neonankiti <yk.nanri@gmail.com>
+homepage: https://github.com/BisonWorks/health_fit
+
+environment:
+  sdk: ">=1.19.0 <2.0.0"
 
 dependencies:
   flutter:
