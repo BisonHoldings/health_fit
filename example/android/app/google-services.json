@@ -1,0 +1,93 @@
+{
+  "project_info": {
+    "project_number": "628635221713",
+    "firebase_url": "https://bisonworks-214413.firebaseio.com",
+    "project_id": "bisonworks-214413",
+    "storage_bucket": "bisonworks-214413.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628635221713:android:9c2e963af5e8fbd8",
+        "android_client_info": {
+          "package_name": "com.example.healthfit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628635221713-bqff5vjssingecai0e8imcnautqeeqfe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.healthfit",
+            "certificate_hash": "157135bf8c9c28b85a417c95b3ffa68058a8939f"
+          }
+        },
+        {
+          "client_id": "628635221713-ba53p3cm66vju42vsqecdh1n4qg3pplf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvNtLQZi3VtftWXj52LsH5k0AnfZxOnaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628635221713-ba53p3cm66vju42vsqecdh1n4qg3pplf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628635221713:android:d98f321e04a6aa44",
+        "android_client_info": {
+          "package_name": "com.example.healthfitexample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628635221713-6niacsm0r93a165fuoft9sc0mmrk2qab.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.healthfitexample",
+            "certificate_hash": "0900fdc28e9268bae194fabacff169cbd0472131"
+          }
+        },
+        {
+          "client_id": "628635221713-mfq8enq9mf4b111o4efb7pg862tgkfma.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.healthfitexample",
+            "certificate_hash": "157135bf8c9c28b85a417c95b3ffa68058a8939f"
+          }
+        },
+        {
+          "client_id": "628635221713-ba53p3cm66vju42vsqecdh1n4qg3pplf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvNtLQZi3VtftWXj52LsH5k0AnfZxOnaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628635221713-ba53p3cm66vju42vsqecdh1n4qg3pplf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

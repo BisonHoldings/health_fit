@@ -91,8 +91,8 @@ class HealthFitPlugin(private val activity: Activity) : MethodCallHandler, Activ
         else -> throw IllegalArgumentException("${call.argument<String>("timeUnit")} is not allowed here.")
     }
 
-    private fun getStartAt(call: MethodCall): Long = call.argument<Long>("startAt")
-    private fun getEndAt(call: MethodCall): Long = call.argument<Long>("endAt")
+    private fun getStartAt(call: MethodCall): Long = call.argument<Long>("startAt") ?: System.currentTimeMillis()
+    private fun getEndAt(call: MethodCall): Long = call.argument<Long>("endAt") ?: System.currentTimeMillis()
 
     private fun getPermission(call: MethodCall): Int = when (call.argument<Int>("permission")) {
         0 -> FitnessOptions.ACCESS_READ
