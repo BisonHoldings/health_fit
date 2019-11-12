@@ -1,6 +1,6 @@
 name: health_fit
 description: Health Fit is a plugin supporting the GoogleFit and HealthKit.
-version: 0.0.2
+version: 0.0.3
 author: neonankiti <yk.nanri@gmail.com>
 homepage: https://github.com/BisonWorks/health_fit
 
