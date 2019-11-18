@@ -42,3 +42,19 @@ class HealthFit {
 
 enum DataType { STEP, WEIGHT }
 enum TimeUnit { MILLISECONDS, HOURS }
+
+class Data<T> {
+  Data<T> data;
+  String timeStamp;
+}
+
+class HealthData<T extends Data> {
+  List<T> data;
+}
+
+class StepData extends HealthData<Data<int>> {
+  @override
+  List<Data<int>> data;
+
+  StepData(this.data);
+}
