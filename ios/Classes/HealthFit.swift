@@ -35,9 +35,12 @@ enum Permission: Int {
 enum TimeUnit: String {
     case milliseconds = "TimeUnit.MILLISECONDS"
     case hours = "TimeUnit.HOURS"
+    case days = "TimeUnit.DAYS"
 
     var dateComponent: DateComponents {
         switch self {
+        case .days:
+            return DateComponents(day: 1)
         case .hours:
             return DateComponents(hour: 1)
         case .milliseconds:
